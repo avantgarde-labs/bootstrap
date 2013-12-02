@@ -41,6 +41,10 @@ The typeahead directives provide several attributes:
    _(Defaults: null)_ :
    A callback executed when a match is selected
 
+* `typeahead-on-scroll` <i class="icon-eye-open"></i>
+   _(Defaults: null)_ :
+   A callback executed when a match is scrolled through
+
 * `typeahead-template-url` <i class="icon-eye-open"></i>
    :
    Set custom item template

@@ -55,6 +55,9 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
       //a callback executed when a match is selected
       var onSelectCallback = $parse(attrs.typeaheadOnSelect);
 
+      //a callback executed when a match is scrolled through
+      var onScrollCallback = $parse(attrs.typeaheadOnScroll);
+
       var inputFormatter = attrs.typeaheadInputFormatter ? $parse(attrs.typeaheadInputFormatter) : undefined;
 
       //INTERNAL VARIABLES
@@ -139,7 +142,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
       //we need to propagate user's query so we can higlight matches
       scope.query = undefined;
 
-      //Declare the timeout promise var outside the function scope so that stacked calls can be cancelled later 
+      //Declare the timeout promise var outside the function scope so that stacked calls can be cancelled later
       var timeoutPromise;
 
       //plug into $parsers pipeline to open a typeahead on view changes initiated from DOM
@@ -223,6 +226,19 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
         element[0].focus();
       };
 
+      scope.scroll = function (activeIdx) {
+        //called from within the $digest() cycle
+        var locals = {};
+        var item;
+
+        locals[parserResult.itemName] = item = scope.matches[activeIdx].model;
+
+        onScrollCallback(originalScope, {
+          $item: item,
+          $label: parserResult.viewMapper(originalScope, locals)
+        });
+      };
+
       //bind keyboard events: arrows up(38) / down(40), enter(13) and tab(9), esc(27)
       element.bind('keydown', function (evt) {
 
@@ -238,11 +254,15 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
 
         if (evt.which === 40) {
           scope.activeIdx = (scope.activeIdx + 1) % scope.matches.length;
-          scope.$digest();
+          scope.$apply(function () {
+            scope.scroll(scope.activeIdx);
+          });
 
         } else if (evt.which === 38) {
           scope.activeIdx = (scope.activeIdx ? scope.activeIdx : scope.matches.length) - 1;
-          scope.$digest();
+          scope.$apply(function () {
+            scope.scroll(scope.activeIdx);
+          });
 
         } else if (evt.which === 13 || evt.which === 9) {
           scope.$apply(function () {

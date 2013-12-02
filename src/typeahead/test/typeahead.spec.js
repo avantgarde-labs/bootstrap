@@ -254,7 +254,7 @@ describe('typeahead tests', function () {
         return $scope.source;
       };
       var element = prepareInputEl("<div><input ng-model='result' typeahead='item for item in loadMatches($viewValue) | filter:$viewValue' typeahead-wait-ms='200'></div>");
-      
+
       changeInputValueTo(element, 'first');
       $timeout.flush();
 
@@ -353,6 +353,36 @@ describe('typeahead tests', function () {
       expect($scope.result).toEqual('AL');
       expect(inputEl.val()).toEqual('AL');
     });
+  });
+
+  describe('scrolling the matches', function () {
+
+    it('should invoke scroll callback on scroll (down, up, up)', function () {
+
+      $scope.onScroll = function ($item, $label) {
+        $scope.$item = $item;
+        $scope.$label = $label;
+      };
+      var element = prepareInputEl("<div><input ng-model='result' typeahead-on-scroll='onScroll($item, $label)' typeahead='item for item in source | filter:$viewValue'></div>");
+      var inputEl = findInput(element);
+
+      changeInputValueTo(element, 'b');
+      triggerKeyDown(element, 40);
+
+      expect($scope.$item).toEqual($scope.source[2]);
+      expect($scope.$label).toEqual('baz');
+
+      triggerKeyDown(element, 38);
+
+      expect($scope.$item).toEqual($scope.source[1]);
+      expect($scope.$label).toEqual('bar');
+
+      triggerKeyDown(element, 38);
+
+      expect($scope.$item).toEqual($scope.source[2]);
+      expect($scope.$label).toEqual('baz');
+    });
+
   });
 
   describe('non-regressions tests', function () {
