@@ -61,6 +61,8 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
 
       var focusFirst = originalScope.$eval(attrs.typeaheadFocusFirst) !== false;
 
+      var focusFirst = originalScope.$eval(attrs.typeaheadFocusFirst) !== false;
+
       //INTERNAL VARIABLES
 
       //model setter executed upon match selection
@@ -280,6 +282,10 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
           $label: parserResult.viewMapper(originalScope, locals)
         });
 
+        close();
+      };
+
+      var close = function() {
         resetMatches();
 
         //return focus to the input element if a match was selected via a mouse click event
@@ -297,7 +303,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
 
         // if there's nothing selected (i.e. focusFirst) and enter is hit, don't do anything
         if (scope.activeIdx == -1 && (evt.which === 13 || evt.which === 9)) {
-          return;
+          return scope.$apply(close);
         }
 
         evt.preventDefault();
