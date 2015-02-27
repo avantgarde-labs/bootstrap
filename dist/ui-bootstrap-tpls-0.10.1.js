@@ -3138,6 +3138,8 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
 
       var appendToBody =  attrs.typeaheadAppendToBody ? $parse(attrs.typeaheadAppendToBody) : false;
 
+      var focusFirst = originalScope.$eval(attrs.typeaheadFocusFirst) !== false;
+
       //INTERNAL VARIABLES
 
       //model setter executed upon match selection
@@ -3191,7 +3193,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
           if (inputValue === modelCtrl.$viewValue && hasFocus) {
             if (matches.length > 0) {
 
-              scope.activeIdx = 0;
+              scope.activeIdx = focusFirst ? 0 : -1;
               scope.matches.length = 0;
               for (var key in scope.headings) {
                 // make use of the fact, that we only insert numeric keys and
@@ -3319,6 +3321,10 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
           $label: parserResult.viewMapper(originalScope, locals)
         });
 
+        close();
+      };
+
+      var close = function() {
         resetMatches();
 
         //return focus to the input element if a mach was selected via a mouse click event
@@ -3331,6 +3337,11 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
         //typeahead is open and an "interesting" key was pressed
         if (scope.matches.length === 0 || HOT_KEYS.indexOf(evt.which) === -1) {
           return;
+        }
+
+        // if there's nothing selected (i.e. focusFirst) and enter is hit, don't do anything
+        if (scope.activeIdx == -1 && (evt.which === 13 || evt.which === 9)) {
+          return scope.$apply(close);
         }
 
         evt.preventDefault();
