@@ -73,6 +73,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
       var popUpEl = angular.element('<div typeahead-popup></div>');
       popUpEl.attr({
         matches: 'matches',
+        headings: 'headings',
         active: 'activeIdx',
         select: 'select(activeIdx)',
         query: 'query',
@@ -81,6 +82,10 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
       //custom item template
       if (angular.isDefined(attrs.typeaheadTemplateUrl)) {
         popUpEl.attr('template-url', attrs.typeaheadTemplateUrl);
+      }
+      //custom heading template
+      if (angular.isDefined(attrs.typeaheadHeadingTemplateUrl)) {
+        popUpEl.attr('heading-template-url', attrs.typeaheadHeadingTemplateUrl);
       }
 
       //create a child scope for the typeahead directive so we are not polluting original scope
@@ -92,6 +97,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
 
       var resetMatches = function() {
         scope.matches = [];
+        scope.headings = {};
         scope.activeIdx = -1;
       };
 
@@ -108,14 +114,29 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
 
               scope.activeIdx = 0;
               scope.matches.length = 0;
+              for (var key in scope.headings) {
+                // make use of the fact, that we only insert numeric keys and
+                // String.toNumber is NaN for a non-numeric string and Nan < 0
+                if (key >= 0) {
+                  delete scope.headings[key];
+                }
+              }
 
               //transform labels
-              for(var i=0; i<matches.length; i++) {
-                locals[parserResult.itemName] = matches[i];
-                scope.matches.push({
-                  label: parserResult.viewMapper(scope, locals),
-                  model: matches[i]
-                });
+              // items can have special properties
+              // '__heading' denotes a header that is no option but shall
+              // display a heading that separates different sections
+              for(var i= 0, j= 0, l=matches.length; i<l; i++) {
+                var item = matches[i];
+                if (item.hasOwnProperty('__heading')) {
+                  scope.headings[j] = item['__heading'];
+                } else {
+                  locals[parserResult.itemName] = item;
+                  scope.matches[j++] = {
+                    label: parserResult.viewMapper(scope, locals),
+                    model: item
+                  };
+                }
               }
 
               scope.query = inputValue;
@@ -141,7 +162,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
       //we need to propagate user's query so we can higlight matches
       scope.query = undefined;
 
-      //Declare the timeout promise var outside the function scope so that stacked calls can be cancelled later 
+      //Declare the timeout promise var outside the function scope so that stacked calls can be cancelled later
       var timeoutPromise;
 
       //plug into $parsers pipeline to open a typeahead on view changes initiated from DOM
@@ -290,6 +311,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
       restrict:'EA',
       scope:{
         matches:'=',
+        headings:'=',
         query:'=',
         active:'=',
         position:'=',
@@ -300,9 +322,18 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
       link:function (scope, element, attrs) {
 
         scope.templateUrl = attrs.templateUrl;
+        scope.headingTemplateUrl = attrs.headingTemplateUrl;
 
         scope.isOpen = function () {
           return scope.matches.length > 0;
+        };
+
+        scope.hasHeading = function(matchIdx) {
+          return !!scope.headings[matchIdx];
+        };
+
+        scope.getHeading = function(matchIdx) {
+          return scope.headings[matchIdx];
         };
 
         scope.isActive = function (matchIdx) {
@@ -324,12 +355,28 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
     return {
       restrict:'EA',
       scope:{
+        active:'=',
         index:'=',
         match:'=',
         query:'='
       },
       link:function (scope, element, attrs) {
         var tplUrl = $parse(attrs.templateUrl)(scope.$parent) || 'template/typeahead/typeahead-match.html';
+        $http.get(tplUrl, {cache: $templateCache}).success(function(tplContent){
+           element.replaceWith($compile(tplContent.trim())(scope));
+        });
+      }
+    };
+  }])
+
+  .directive('typeaheadHeading', ['$http', '$templateCache', '$compile', '$parse', function ($http, $templateCache, $compile, $parse) {
+    return {
+      restrict:'EA',
+      scope:{
+        heading:'='
+      },
+      link:function (scope, element, attrs) {
+        var tplUrl = $parse(attrs.templateUrl)(scope.$parent) || 'template/typeahead/typeahead-heading.html';
         $http.get(tplUrl, {cache: $templateCache}).success(function(tplContent){
            element.replaceWith($compile(tplContent.trim())(scope));
         });
