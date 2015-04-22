@@ -19,7 +19,7 @@
   ],
   "description": "Native AngularJS (Angular) directives for Bootstrap.",
   "version": "0.12.1-avgl",
-  "main": ["./dist/ui-bootstrap-tpls.js"],
+  "main": ["./dist/ui-bootstrap-tpls-0.12.2-avgl.js"],
   "dependencies": {
     "angular": ">=1 <1.3.0"
   }
